@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 스터디 펫</title>
+    <!-- 픽셀 아트용 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game-boy">
+        <div class="screen-border">
+            <div class="power-led"></div>
+            <div class="screen">
+                <!-- 게임 캔버스 -->
+                <canvas id="gameCanvas" width="320" height="320"></canvas>
+                
+                <!-- 교감 버튼 오버레이 -->
+                <div class="interact-overlay">
+                    <button class="screen-btn left" onclick="interact('praise')">👋 칭찬</button>
+                    <button class="screen-btn right" onclick="interact('scold')">⚡ 꾸중</button>
+                </div>
+
+                <!-- 말풍선 (동적 위치) -->
+                <div id="pet-bubble" class="pixel-bubble hidden">안녕!</div>
+
+                <!-- UI 오버레이 -->
+                <div class="ui-overlay">
+                    <div class="top-bar">
+                        <span id="level-display">LV.1</span>
+                        <span id="gold-display">0 P</span>
+                    </div>
+                    <!-- 상태 게이지 -->
+                    <div class="status-bars">
+                        <div class="status-row">
+                            <span class="icon">🍖</span>
+                            <div class="bar-bg"><div id="bar-hunger" class="bar-fill" style="width: 100%; background: #ff9999;"></div></div>
+                        </div>
+                        <div class="status-row">
+                            <span class="icon">✨</span>
+                            <div class="bar-bg"><div id="bar-clean" class="bar-fill" style="width: 100%; background: #99ccff;"></div></div>
+                        </div>
+                        <div class="status-row">
+                            <span class="icon">💤</span>
+                            <div class="bar-bg"><div id="bar-sleep" class="bar-fill" style="width: 100%; background: #ba9ffb;"></div></div>
+                        </div>
+                        <div class="status-row">
+                            <span class="icon">❤️</span>
+                            <div class="bar-bg"><div id="bar-mood" class="bar-fill" style="width: 100%; background: #ffb3ba;"></div></div>
+                        </div>
+                        <div class="status-row">
+                            <span class="icon">🚽</span>
+                            <div class="bar-bg"><div id="bar-bladder" class="bar-fill" style="width: 100%; background: #ffd700;"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="brand">STUDY PET</div>
+
+        <div class="controls">
+            <div class="d-pad">
+                <div class="d-up"></div>
+                <div class="d-left" onclick="movePet(-1)"></div>
+                <div class="d-right" onclick="movePet(1)"></div>
+                <div class="d-down"></div>
+                <div class="d-center"></div>
+            </div>
+            
+            <div class="action-btns">
+                <div class="btn-group">
+                    <button class="btn-a" onclick="handleAButton()">A</button>
+                    <div class="label">공부</div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-b" onclick="openMenu('inventory')">B</button>
+                    <div class="label">가방</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 하단 메뉴 버튼들 -->
+        <div class="extra-controls">
+            <button class="menu-btn" onclick="openMenu('shop')">🏪 상점</button>
+            <button class="menu-btn" onclick="toggleSleep()">🛏️ 침실</button>
+            <button class="menu-btn" onclick="openMenu('minigame')">🎮 미니게임</button>
+            <button class="menu-btn cheat-btn" onclick="activateCheat()">🔓 치트</button>
+        </div>
+    </div>
+
+    <!-- 모달: 이름 짓기 (게임 시작) -->
+    <div id="start-modal" class="modal">
+        <div class="modal-content pixel-box">
+            <h3>펫의 이름은?</h3>
+            <input type="text" id="pet-name-input" placeholder="이름을 입력하세요" style="font-family: 'Press Start 2P', sans-serif; margin: 10px 0; padding: 5px; text-align: center; width: 80%;">
+            <button class="pixel-btn" onclick="startGameWithInput()">결정!</button>
+        </div>
+    </div>
+
+    <!-- 모달: 공부하기 -->
+    <div id="study-modal" class="modal hidden">
+        <div class="modal-content pixel-box">
+            <h3>오늘의 문제</h3>
+            <p id="quiz-question" class="question-text">문제 로딩중...</p>
+            <div id="quiz-options" class="options-list">
+                <!-- 옵션 버튼 -->
+            </div>
+            <button class="pixel-btn close-btn" onclick="closeAllModals()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 모달: 상점 -->
+    <div id="shop-modal" class="modal hidden">
+        <div class="modal-content pixel-box wide-modal">
+            <h3>아이템 상점</h3>
+            <div class="tab-menu">
+                <button onclick="switchShopTab('food')">음식/약</button>
+                <button onclick="switchShopTab('tools')">도구</button>
+                <button onclick="switchShopTab('colors')">색상</button>
+                <button onclick="switchShopTab('items')">장식</button>
+                <button onclick="switchShopTab('bg')">배경</button>
+            </div>
+            <div id="shop-list" class="scroll-list">
+                <!-- 아이템 리스트 -->
+            </div>
+            <button class="pixel-btn close-btn" onclick="closeAllModals()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 모달: 인벤토리 -->
+    <div id="inventory-modal" class="modal hidden">
+        <div class="modal-content pixel-box wide-modal">
+            <h3>내 가방</h3>
+            <div class="tab-menu">
+                <button onclick="switchInvTab('food')">음식/도구</button>
+                <button onclick="switchInvTab('colors')">색상</button>
+                <button onclick="switchInvTab('items')">장식</button>
+                <button onclick="switchInvTab('bg')">배경</button>
+            </div>
+            <div id="inv-list" class="scroll-list">
+                <!-- 아이템 리스트 -->
+            </div>
+            <button class="pixel-btn close-btn" onclick="closeAllModals()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 모달: 미니게임 선택 -->
+    <div id="minigame-modal" class="modal hidden">
+        <div class="modal-content pixel-box">
+            <h3>미니게임 선택</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+                <button class="pixel-btn" onclick="startMinigame('rope')">🏃 줄넘기</button>
+                <button class="pixel-btn" onclick="startMinigame('dodge')">💩 똥 피하기</button>
+            </div>
+            <button class="pixel-btn close-btn" onclick="closeAllModals()">닫기</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
