@@ -23,9 +23,6 @@
                     <button class="screen-btn right" onclick="interact('scold')">⚡ 꾸중</button>
                 </div>
 
-                <!-- 말풍선 (동적 위치) -->
-                <div id="pet-bubble" class="pixel-bubble hidden">안녕!</div>
-
                 <!-- UI 오버레이 -->
                 <div class="ui-overlay">
                     <div class="top-bar">
@@ -84,12 +81,15 @@
         
         <!-- 하단 메뉴 버튼들 -->
         <div class="extra-controls">
-            <button class="menu-btn" onclick="openMenu('shop')">🏪 상점</button>
-            <button class="menu-btn" onclick="toggleSleep()">🛏️ 침실</button>
-            <button class="menu-btn" onclick="openMenu('minigame')">🎮 미니게임</button>
-            <button class="menu-btn cheat-btn" onclick="activateCheat()">🔓 치트</button>
+            <button class="menu-btn" onclick="openMenu('shop')">🏪<br>상점</button>
+            <button class="menu-btn" onclick="toggleSleep()">🛏️<br>침실</button>
+            <button class="menu-btn" onclick="openMenu('minigame')">🎮<br>미니게임</button>
+            <button class="menu-btn cheat-btn" onclick="activateCheat()">🔓<br>치트</button>
         </div>
     </div>
+
+    <!-- 말풍선 (스크린 밖으로 이동) -->
+    <div id="pet-bubble" class="pixel-bubble hidden">안녕!</div>
 
     <!-- 모달: 이름 짓기 (게임 시작) -->
     <div id="start-modal" class="modal">
@@ -157,6 +157,12 @@
             </div>
             <button class="pixel-btn close-btn" onclick="closeAllModals()">닫기</button>
         </div>
+    </div>
+
+    <!-- 게임 오버 / 다시 시작 -->
+    <div id="gameover-overlay" class="hidden">
+        <h2 style="color: red; font-family: 'Press Start 2P'; margin-bottom: 20px;">GAME OVER</h2>
+        <button class="pixel-btn" onclick="window.location.reload()">다시 시작</button>
     </div>
 
     <script src="script.js"></script>

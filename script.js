@@ -23,23 +23,31 @@ const SHOP_DB = {
         { id: 'c_blue', name: '스카이 블루', type: 'color', price: 300, unlockLv: 2, value: '#87CEEB' },
         { id: 'c_green', name: '민트 그린', type: 'color', price: 300, unlockLv: 2, value: '#98ff98' },
         { id: 'c_purple', name: '라벤더', type: 'color', price: 500, unlockLv: 3, value: '#E6E6FA' },
+        { id: 'c_choco', name: '초코 브라운', type: 'color', price: 800, unlockLv: 4, value: '#8B4513' },
+        { id: 'c_white', name: '스노우 화이트', type: 'color', price: 1000, unlockLv: 6, value: '#ffffff' },
+        { id: 'c_alien', name: '에일리언 그린', type: 'color', price: 1500, unlockLv: 8, value: '#32CD32' },
         { id: 'c_gold', name: '황금색', type: 'color', price: 2000, unlockLv: 10, value: '#FFD700' },
         { id: 'c_black', name: '시크 블랙', type: 'color', price: 1000, unlockLv: 5, value: '#555555' }
     ],
     items: [ // 악세사리
         { id: 'acc_none', name: '없음', type: 'item', price: 0, unlockLv: 1 },
         { id: 'acc_ribbon', name: '빨간 리본', type: 'item', price: 500, unlockLv: 3, icon: '🎀', offsetY: -25, scale: 0.5 },
-        { id: 'acc_glasses', name: '선글라스', type: 'item', price: 800, unlockLv: 5, icon: '🕶️', offsetY: -20 },
-        { id: 'acc_crown', name: '왕관', type: 'item', price: 3000, unlockLv: 15, icon: '👑', offsetY: -30, scale: 0.5 },
-        { id: 'acc_flower', name: '꽃핀', type: 'item', price: 400, unlockLv: 2, icon: '🌸', offsetY: -25, scale: 0.33 }
+        { id: 'acc_flower', name: '꽃핀', type: 'item', price: 400, unlockLv: 2, icon: '🌸', offsetY: -25, scale: 0.33 },
+        { id: 'acc_cap', name: '야구 모자', type: 'item', price: 600, unlockLv: 4, icon: '🧢', offsetY: -25, scale: 0.5 },
+        { id: 'acc_bunny', name: '토끼 귀', type: 'item', price: 900, unlockLv: 5, icon: '🐰', offsetY: -35, scale: 0.5 },
+        { id: 'acc_scarf', name: '목도리', type: 'item', price: 700, unlockLv: 6, icon: '🧣', offsetY: 0, scale: 0.5 },
+        { id: 'acc_tophat', name: '신사 모자', type: 'item', price: 1500, unlockLv: 10, icon: '🎩', offsetY: -35, scale: 0.6 },
+        { id: 'acc_crown', name: '왕관', type: 'item', price: 3000, unlockLv: 15, icon: '👑', offsetY: -35, scale: 0.5 }
     ],
     tools: [
         { id: 'item_bonfire', name: '모닥불', type: 'tool', price: 100, unlockLv: 1, icon: '🔥' }
     ],
     backgrounds: [
         { id: 'bg_default', name: '심플 그레이', type: 'bg', price: 0, unlockLv: 1, color: '#f0f0f0' },
+        { id: 'bg_picnic', name: '핑크 피크닉', type: 'bg', price: 500, unlockLv: 2, color: '#FFC0CB' },
         { id: 'bg_forest', name: '숲속', type: 'bg', price: 1000, unlockLv: 4, color: '#98FB98' },
         { id: 'bg_sky', name: '구름 위', type: 'bg', price: 1200, unlockLv: 6, color: '#E0FFFF' },
+        { id: 'bg_space', name: '우주 여행', type: 'bg', price: 2000, unlockLv: 10, color: '#2c3e50' },
         { id: 'bg_night', name: '밤하늘', type: 'bg', price: 1500, unlockLv: 8, color: '#191970' }
     ]
 };
@@ -169,20 +177,29 @@ function getCurrentSprite() {
             sprite[9][11] = 4;
         }
     } else if (gameState.isSick) {
-        // 아픈 눈 (> <)
-        sprite[7][3] = 1; sprite[7][4] = 0; sprite[7][10] = 0; sprite[7][11] = 1;
-        sprite[8][3] = 0; sprite[8][4] = 1; sprite[8][10] = 1; sprite[8][11] = 0;
+        // 아픈 눈 (축 처진 눈 - 검정 일자)
+        // 눈을 검정색(3)으로 설정
+        sprite[7][3] = 3; sprite[7][4] = 3; sprite[7][5] = 3; 
+        sprite[7][10] = 3; sprite[7][11] = 3; sprite[7][12] = 3;
+        
+        // 기존 눈 위치를 피부색(2)으로 덮음 (투명 0으로 하면 배경이 비쳐서 흰색으로 보임)
+        sprite[8][3] = 2; sprite[8][4] = 2; sprite[8][10] = 2; sprite[8][11] = 2;
+
         // 입 벌림
         sprite[9][7] = 0; 
     }
 
     // 죽었을 때
     if (gameState.isDead) {
-        sprite[7][3] = 1; sprite[7][4] = 0; sprite[7][10] = 1; sprite[7][11] = 0;
-        sprite[8][3] = 0; sprite[8][4] = 1; sprite[8][10] = 0; sprite[8][11] = 1;
-        // X X 눈 (간단히 3번 색으로 표현하거나 모양 변경)
-        sprite[7][3] = 1; sprite[7][11] = 1;
-        sprite[8][4] = 1; sprite[8][10] = 1;
+        // 축 처진 눈 - 검정 일자
+        sprite[7][3] = 3; sprite[7][4] = 3; sprite[7][5] = 3; 
+        sprite[7][10] = 3; sprite[7][11] = 3; sprite[7][12] = 3;
+        
+        // 기존 눈 위치를 피부색(2)으로 덮음
+        sprite[8][3] = 2; sprite[8][4] = 2; sprite[8][10] = 2; sprite[8][11] = 2;
+        
+        // 입 -
+        sprite[9][7] = 1;
     }
 
     sprite[12][1] = 0; sprite[12][3] = 0; sprite[12][11] = 0; sprite[12][13] = 0;
@@ -281,6 +298,7 @@ setInterval(() => {
     
     if (gameTick % 5 === 0) {
         if (gameState.stats.hunger > 0) gameState.stats.hunger -= 1;
+        // 청결도 감소 로직 수정: 0 이하로 내려가지 않도록 하는 조건이 있으면 제거하거나 수정
         if (gameState.stats.clean > 0) gameState.stats.clean -= 1;
         if (gameState.stats.bladder > 0) gameState.stats.bladder -= 1;
         
@@ -308,6 +326,21 @@ setInterval(() => {
                 showSpeechBubble("전기세가 없어서 불이 꺼졌어... ㅠㅠ");
             }
         }
+    } else if (!gameState.isLightOn && gameState.pet.state !== 'sleep') {
+        // 돈 벌면 자동 복구
+        if (gameState.gold >= 5) {
+             gameState.isLightOn = true;
+             gameState.gold -= 5; 
+             showSpeechBubble("전기세 납부! 불이 켜졌어!");
+        }
+    }
+    
+    // 낮은 상태 대사 (10초마다 체크)
+    if (gameTick % 10 === 0 && gameState.stage !== 'egg' && !gameState.pet.emote && gameState.pet.state !== 'sleep') {
+        if (gameState.stats.hunger < 30) showSpeechBubble("배가 고파요...");
+        else if (gameState.stats.mood < 30) showSpeechBubble("너무 심심해요...");
+        else if (gameState.stats.clean < 30) showSpeechBubble("몸이 찝찝해요...");
+        else if (gameState.stats.sleep < 30) showSpeechBubble("졸음이 와요...");
     }
     
     if (gameState.stats.clean <= 0) {
@@ -351,14 +384,51 @@ function die(reason) {
     gameState.soul.opacity = 1.0;
     
     showSpeechBubble(reason);
+
+    // 말풍선이 사라지지 않도록 hidden 제거 타이머 취소 로직은 없지만, 
+    // showSpeechBubble 내부의 setTimeout이 3초 뒤에 hidden을 추가하므로
+    // 죽었을 때는 계속 떠있게 하려면 별도 처리가 필요할 수 있음.
+    // 하지만 "아까는 떴는데 지금은 안 떠"라는 것은 showSpeechBubble이 호출되지 않았거나
+    // 다른 요인(예: draw loop 정지) 때문일 수 있음.
+    // 여기서는 죽음 메시지를 강제로 유지하기 위해 3.5초 뒤에 다시 띄우거나 오버레이에 텍스트 추가 등을 고려.
+    // 일단 showSpeechBubble이 정상 호출되는지 확인.
+    
+    setTimeout(() => {
+        document.getElementById('gameover-overlay').classList.remove('hidden');
+        // 게임 오버 화면에도 이유 표시
+        const overlay = document.getElementById('gameover-overlay');
+        let reasonEl = overlay.querySelector('.reason-text');
+        if (!reasonEl) {
+            reasonEl = document.createElement('p');
+            reasonEl.className = 'reason-text';
+            reasonEl.style.color = 'white';
+            reasonEl.style.marginBottom = '20px';
+            reasonEl.style.fontFamily = "'Press Start 2P', cursive";
+            reasonEl.style.fontSize = "10px";
+            overlay.insertBefore(reasonEl, overlay.querySelector('button'));
+        }
+        reasonEl.innerText = reason;
+    }, 2500);
 }
 
 function update(dt) {
     if (gameState.stage === 'egg') {
-        if (gameState.egg.temp > 0) gameState.egg.temp -= 0.5;
+        // 온도 감소 속도 완화 (0.5 -> 0.1)
+        if (gameState.egg.temp > 0) gameState.egg.temp -= 0.1;
+        
+        // 주기적으로 상태 말풍선 띄우기 (2초마다 체크)
+        if (gameTick % 2 === 0 && gameState.egg.hasBonfire) {
+             if (gameState.egg.temp < 40) {
+                showSpeechBubble("너무 추워... 🥶");
+            } else if (gameState.egg.temp > 80) {
+                showSpeechBubble("너무 뜨거워! 🥵");
+            } else {
+                showSpeechBubble("따뜻해서 좋아 😊");
+            }
+        }
         
         if (gameState.egg.temp > 40 && gameState.egg.temp < 80) {
-            gameState.egg.progress += 0.5;
+            gameState.egg.progress += 0.1; 
             if (gameState.egg.progress >= 100) hatchEgg();
         }
         return;
@@ -439,9 +509,10 @@ function draw() {
         ctx.textAlign = 'center';
         ctx.fillText(gameState.petName || '알', gameState.pet.x, gameState.pet.y - 50);
 
+        // 남은 시간 위치 변경 (알 아래쪽)
         ctx.fillStyle = 'red';
         ctx.font = '10px sans-serif';
-        ctx.fillText(`남은 시간: ${gameState.egg.timer}초`, gameState.pet.x, gameState.pet.y - 70);
+        ctx.fillText(`알 부화 제한 시간: ${gameState.egg.timer}초`, gameState.pet.x, gameState.pet.y + 90);
 
         if (gameState.egg.hasBonfire) {
             const fireSize = 30 + (gameState.egg.temp / 5); 
@@ -568,12 +639,27 @@ function draw() {
         ctx.fillText('💩', p.x, p.y);
     });
 
-    // 말풍선 위치 업데이트
+    // 말풍선 위치 업데이트 (스크린 밖으로 뺐으므로 절대 좌표 계산 필요)
     const bubble = document.getElementById('pet-bubble');
     if (!bubble.classList.contains('hidden')) {
-        bubble.style.left = `${gameState.pet.x}px`;
-        bubble.style.top = `${gameState.pet.y - 90}px`; 
-        bubble.style.transform = 'translate(-50%, -50%)';
+        const canvasRect = canvas.getBoundingClientRect();
+        
+        let bubbleX = gameState.pet.x;
+        // 화면 좌우 경계 처리
+        if (bubbleX < 60) bubbleX = 60;
+        if (bubbleX > GAME_WIDTH - 60) bubbleX = GAME_WIDTH - 60;
+
+        // 캔버스 스케일링 고려 (캔버스 크기가 CSS로 조정되었을 경우 대비)
+        const scaleX = canvasRect.width / GAME_WIDTH;
+        const scaleY = canvasRect.height / GAME_HEIGHT;
+
+        // 최종 화면 좌표
+        const screenX = canvasRect.left + (bubbleX * scaleX);
+        const screenY = canvasRect.top + ((gameState.pet.y - 70) * scaleY);
+
+        bubble.style.left = `${screenX}px`;
+        bubble.style.top = `${screenY}px`; 
+        bubble.style.transform = 'translate(-50%, -100%)';
     }
 }
 
@@ -690,9 +776,10 @@ function drawPet(x, y, dir) {
         }
     } else if (gameState.pet.state === 'eating') {
         if (gameState.pet.eatingIcon) {
-            ctx.font = '20px sans-serif';
-            const moveY = Math.sin(gameState.pet.animTimer / 100) * 2;
-            ctx.fillText(gameState.pet.eatingIcon, x + (dir * 20), y + 10 + moveY);
+            ctx.font = '30px sans-serif';
+            const moveY = Math.sin(gameState.pet.animTimer / 100) * 5;
+            // 캐릭터의 왼쪽 볼 쪽 (화면상 왼쪽)
+            ctx.fillText(gameState.pet.eatingIcon, x - 35, y + moveY);
         }
         ctx.font = '30px sans-serif';
         ctx.fillText('😋', x, y - 40);
@@ -721,12 +808,16 @@ function drawAccessory(x, y, dir) {
     
     let offsetY = accItem.offsetY !== undefined ? accItem.offsetY : -60;
     
+    // 성장 단계별 위치 보정
     if (gameState.stage === 'baby') {
-        offsetY += 35; // 아기는 훨씬 아래로
+        if (accItem.id === 'acc_scarf') offsetY += 40; // 목도리는 더 아래로
+        else offsetY += 35; // 모자 등 머리 장식
     } else if (gameState.stage === 'child') {
-        offsetY += 20; // 어린이는 적당히 아래로
+        if (accItem.id === 'acc_scarf') offsetY += 25;
+        else offsetY += 20; 
     } else if (gameState.stage === 'teen') {
-        offsetY += 10; // 청소년은 조금만
+        if (accItem.id === 'acc_scarf') offsetY += 15;
+        else offsetY += 10;
     }
 
     const itemY = y + offsetY;
@@ -738,9 +829,13 @@ function drawAccessory(x, y, dir) {
 // --- UI 및 로직 ---
 function updateUI() {
     document.getElementById('gold-display').innerText = `${gameState.gold} P`;
-    document.getElementById('level-display').innerText = `LV.${gameState.level} (${gameState.age}일)`;
     
-    if (gameState.stage === 'egg') {
+    // 경험치 % 계산
+    const expPercent = Math.floor((gameState.exp / gameState.maxExp) * 100);
+    document.getElementById('level-display').innerText = `LV.${gameState.level} (${expPercent}%)`;
+    
+    // 알 상태이거나 미니게임 중일 때는 상태 게이지 숨김
+    if (gameState.stage === 'egg' || gameState.minigame.active) {
         document.querySelector('.status-bars').style.display = 'none';
     } else {
         document.querySelector('.status-bars').style.display = 'flex';
@@ -753,15 +848,32 @@ function updateUI() {
     document.getElementById('bar-bladder').style.width = `${gameState.stats.bladder}%`;
 }
 
+let speechBubbleTimeout = null;
+
 function showSpeechBubble(text) {
     const bubble = document.getElementById('pet-bubble');
     bubble.innerText = text;
     bubble.classList.remove('hidden');
-    bubble.style.left = '50%';
-    bubble.style.top = '40%';
-    bubble.style.transform = 'translate(-50%, -50%)';
+    
+    // 위치 설정 (초기)
+    const canvasRect = canvas.getBoundingClientRect();
+    let bubbleX = gameState.pet.x;
+    if (bubbleX < 60) bubbleX = 60;
+    if (bubbleX > GAME_WIDTH - 60) bubbleX = GAME_WIDTH - 60;
 
-    setTimeout(() => {
+    const scaleX = canvasRect.width / GAME_WIDTH;
+    const scaleY = canvasRect.height / GAME_HEIGHT;
+
+    const screenX = canvasRect.left + (bubbleX * scaleX);
+    const screenY = canvasRect.top + ((gameState.pet.y - 70) * scaleY);
+
+    bubble.style.left = `${screenX}px`;
+    bubble.style.top = `${screenY}px`;
+    bubble.style.transform = 'translate(-50%, -100%)';
+
+    if (speechBubbleTimeout) clearTimeout(speechBubbleTimeout);
+
+    speechBubbleTimeout = setTimeout(() => {
         bubble.classList.add('hidden');
     }, 3000);
 }
@@ -1198,8 +1310,18 @@ function handleAButton() {
 }
 
 function fanFire() {
-    gameState.egg.temp += 10;
+    // 온도 증가폭 조정 (기존 10 -> 5)
+    gameState.egg.temp += 5;
     if (gameState.egg.temp > 100) gameState.egg.temp = 100;
+    
+    // 온도에 따른 대사 출력
+    if (gameState.egg.temp < 40) {
+        showSpeechBubble("추워~ 🥶");
+    } else if (gameState.egg.temp > 80) {
+        showSpeechBubble("너무 뜨거워~ 🥵");
+    } else {
+        showSpeechBubble("따뜻해서 너무 좋아 😊");
+    }
     
     const fireEffect = document.createElement('div');
     fireEffect.innerText = "🔥";
@@ -1219,7 +1341,7 @@ function fanFire() {
 
 function hatchEgg() {
     gameState.stage = 'baby';
-    showSpeechBubble(`태어났다! 안녕 ${gameState.petName}!`);
+    showSpeechBubble(`태어났다! 안녕 나는 ${gameState.petName}야!`);
     
     for(let i=0; i<10; i++) {
         setTimeout(() => {
@@ -1412,8 +1534,14 @@ function updateDodgeGame() {
         const obs = dodge.obstacles[i];
         obs.y += obs.speed;
         
-        if (obs.x > gameState.pet.x - 15 && obs.x < gameState.pet.x + 15 &&
-            obs.y > gameState.pet.y - 30 && obs.y < gameState.pet.y) {
+        // 충돌 범위 확대 (몸 전체 판정: 머리 위부터 발끝까지, 좌우 폭도 넉넉하게)
+        if (obs.x > gameState.pet.x - 25 && obs.x < gameState.pet.x + 25 &&
+            obs.y > gameState.pet.y - 60 && obs.y < gameState.pet.y) {
+            
+            // 청결도 감소
+            gameState.stats.clean = Math.max(0, gameState.stats.clean - 30);
+            showSpeechBubble("으악! 똥 묻었어!");
+
             gameOverMinigame();
             return;
         }
@@ -1430,6 +1558,12 @@ function gameOverMinigame() {
     gameState.minigame.gameOver = true;
     showSpeechBubble(`으악! 기록: ${gameState.minigame.score}점`);
     
+    // 똥 피하기 게임에서 죽으면 청결도 감소
+    if (gameState.minigame.type === 'dodge') {
+        gameState.stats.clean = Math.max(0, gameState.stats.clean - 30);
+        showSpeechBubble("으악! 똥 묻었어... ㅠㅠ");
+    }
+
     const reward = gameState.minigame.score * 10;
     gameState.gold += reward;
     updateUI();
@@ -1438,6 +1572,7 @@ function gameOverMinigame() {
         alert(`게임 오버! \n기록: ${gameState.minigame.score}점\n보상: ${reward} P`);
         gameState.minigame.active = false;
         gameState.pet.state = 'idle';
+        updateUI(); // UI 다시 표시를 위해 호출
     }, 500);
 }
 
@@ -1515,12 +1650,11 @@ canvas.addEventListener('mousedown', (e) => {
     for (let i = gameState.poops.length - 1; i >= 0; i--) {
         const p = gameState.poops[i];
         if (Math.abs(x - p.x) < 20 && Math.abs(y - p.y) < 20) {
-            gameState.poops.splice(i, 1);
-            gameState.stats.clean = Math.min(100, gameState.stats.clean + 10);
-            showSpeechBubble("깨끗해졌다!");
-            
             if (gameState.gold >= 5) {
                 gameState.gold -= 5;
+                gameState.poops.splice(i, 1);
+                gameState.stats.clean = Math.min(100, gameState.stats.clean + 10);
+                showSpeechBubble("깨끗해졌다!");
                 updateUI();
             } else {
                 showSpeechBubble("휴지가 없어... (돈 부족)");
