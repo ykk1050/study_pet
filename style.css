@@ -8,6 +8,8 @@ body {
     height: 100vh;
     margin: 0;
     user-select: none;
+    touch-action: none; /* Prevent browser zooming/scrolling globally */
+    overflow: hidden; /* Prevent scrolling */
 }
 
 /* Game Boy Body */
@@ -23,6 +25,28 @@ body {
     align-items: center;
     position: relative;
     box-sizing: border-box;
+    
+    /* Mobile Scaling Logic */
+    transform-origin: center center;
+}
+
+/* Responsive scaling for smaller screens */
+@media (max-width: 420px), (max-height: 720px) {
+    .game-boy {
+        transform: scale(0.85); /* Default scale down */
+    }
+}
+
+@media (max-width: 380px), (max-height: 650px) {
+    .game-boy {
+        transform: scale(0.75);
+    }
+}
+
+@media (max-width: 340px) {
+    .game-boy {
+        transform: scale(0.65);
+    }
 }
 
 /* Screen Area */
@@ -102,6 +126,7 @@ canvas {
     position: absolute;
     cursor: pointer;
     box-shadow: 2px 2px 0 #111;
+    touch-action: manipulation; /* Prevent double-tap zoom */
 }
 
 .d-up:active, .d-left:active, .d-right:active, .d-down:active {
@@ -141,6 +166,8 @@ canvas {
     font-family: 'Press Start 2P';
     font-size: 14px;
     margin-bottom: 5px;
+    touch-action: manipulation; /* Prevent double-tap zoom */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn-a:active, .btn-b:active {
@@ -182,6 +209,8 @@ canvas {
     min-width: 60px;
     color: white;
     text-shadow: 1px 1px 0 #333;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .menu-btn:active {
@@ -274,6 +303,8 @@ canvas {
     cursor: pointer;
     pointer-events: auto; /* Re-enable clicks */
     z-index: 50;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .screen-btn.left {
@@ -331,6 +362,8 @@ canvas {
     box-shadow: 4px 4px 0 #333;
     transition: transform 0.1s, box-shadow 0.1s;
     margin-top: 10px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .pixel-btn:active {
@@ -395,6 +428,7 @@ canvas {
     font-size: 8px;
     cursor: pointer;
     white-space: nowrap;
+    touch-action: manipulation;
 }
 
 .tab-menu button:hover {
