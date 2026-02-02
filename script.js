@@ -2,6 +2,13 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// 이미지 로드
+const fanImage = new Image();
+fanImage.src = 'fan.png';
+
+const eggImage = new Image();
+eggImage.src = 'egg.png';
+
 // 게임 설정
 const GAME_WIDTH = 320;
 const GAME_HEIGHT = 320;
@@ -42,27 +49,65 @@ const SHOP_DB = {
     tools: [
         { id: 'item_bonfire', name: '모닥불', type: 'tool', price: 100, unlockLv: 1, icon: '🔥' }
     ],
-    backgrounds: [
-        { id: 'bg_default', name: '심플 그레이', type: 'bg', price: 0, unlockLv: 1, color: '#f0f0f0' },
+    bg: [
+        { id: 'bg_default', name: '심플 화이트', type: 'bg', price: 0, unlockLv: 1, color: '#ffffff' },
         { id: 'bg_picnic', name: '핑크 피크닉', type: 'bg', price: 500, unlockLv: 2, color: '#FFC0CB' },
         { id: 'bg_forest', name: '숲속', type: 'bg', price: 1000, unlockLv: 4, color: '#98FB98' },
         { id: 'bg_sky', name: '구름 위', type: 'bg', price: 1200, unlockLv: 6, color: '#E0FFFF' },
         { id: 'bg_space', name: '우주 여행', type: 'bg', price: 2000, unlockLv: 10, color: '#2c3e50' },
         { id: 'bg_night', name: '밤하늘', type: 'bg', price: 1500, unlockLv: 8, color: '#191970' }
+    ],
+    floor: [
+        { id: 'fl_default', name: '기본 바닥', type: 'floor', price: 0, unlockLv: 1, color: '#d0d0d0' },
+        { id: 'fl_wood', name: '나무 바닥', type: 'floor', price: 500, unlockLv: 2, color: '#8b4513' },
+        { id: 'fl_grass', name: '잔디', type: 'floor', price: 800, unlockLv: 3, color: '#4caf50' },
+        { id: 'fl_check', name: '체크무늬', type: 'floor', price: 1000, unlockLv: 4, color: '#555555' },
+        { id: 'fl_rug', name: '러그', type: 'floor', price: 1200, unlockLv: 5, color: '#e91e63' }
     ]
 };
 
-// 문제 데이터
-const QUESTIONS = [
-    { q: "Apple의 뜻은?", options: ["사과", "바나나", "포도"], a: 0 },
-    { q: "10 - 3 = ?", options: ["6", "7", "8"], a: 1 },
-    { q: "개구리는 어떻게 울까?", options: ["멍멍", "야옹", "개굴"], a: 2 },
-    { q: "신호등의 멈춤 색깔은?", options: ["초록", "노랑", "빨강"], a: 2 },
-    { q: "얼음이 녹으면?", options: ["물", "불", "흙"], a: 0 },
-    { q: "우리나라의 수도는?", options: ["부산", "서울", "제주"], a: 1 },
-    { q: "3 x 3 = ?", options: ["6", "9", "12"], a: 1 },
-    { q: "Sky의 뜻은?", options: ["땅", "바다", "하늘"], a: 2 }
-];
+// 문제 데이터 (VOCABULARY에서 로드됨)
+// const QUESTIONS = ... (Removed)
+
+function generateQuiz() {
+    if (typeof VOCABULARY === 'undefined' || VOCABULARY.length === 0) {
+        return { q: "사과의 영어 단어는?", options: ["Apple", "Banana", "Grape"], a: 0 };
+    }
+
+    // 정답 단어 선택
+    const answerIdx = Math.floor(Math.random() * VOCABULARY.length);
+    const answerItem = VOCABULARY[answerIdx];
+
+    // 오답 단어 2개 선택 (정답과 중복되지 않게)
+    let wrongIndices = [];
+    while (wrongIndices.length < 2) {
+        const idx = Math.floor(Math.random() * VOCABULARY.length);
+        if (idx !== answerIdx && !wrongIndices.includes(idx)) {
+            wrongIndices.push(idx);
+        }
+    }
+
+    const options = [
+        { text: answerItem.kor, isAnswer: true },
+        { text: VOCABULARY[wrongIndices[0]].kor, isAnswer: false },
+        { text: VOCABULARY[wrongIndices[1]].kor, isAnswer: false }
+    ];
+
+    // 보기 섞기
+    for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+    }
+
+    // 정답 인덱스 찾기
+    const correctIndex = options.findIndex(o => o.isAnswer);
+
+    return {
+        q: `${answerItem.eng}의 뜻은?`,
+        options: options.map(o => o.text),
+        a: correctIndex
+    };
+}
 
 // 상태 관리
 let gameState = {
@@ -81,24 +126,25 @@ let gameState = {
         temp: 0,
         progress: 0,
         hasBonfire: false,
-        timer: 60 
+        timer: 60,
+        fanAnim: 0
     },
     stats: {
         hunger: 80,
         clean: 80,
         sleep: 80,
         mood: 80,
-        bladder: 80,
         weight: 10,
         discipline: 0,
         intellect: 0 // 지능 추가
     },
     poops: [], 
-    inventory: ['c_default', 'acc_none', 'bg_default'], 
+    inventory: ['c_default', 'acc_none', 'bg_default', 'fl_default'], 
     equipped: {
         bodyColor: 'c_default',
         accessory: 'acc_none',
-        background: 'bg_default'
+        background: 'bg_default',
+        floor: 'fl_default'
     },
     pet: {
         x: 160,
@@ -165,9 +211,21 @@ function getCurrentSprite() {
         sprite[7][3] = 2; sprite[7][4] = 2; sprite[7][10] = 2; sprite[7][11] = 2;
         sprite[8][3] = 1; sprite[8][4] = 1; sprite[8][10] = 1; sprite[8][11] = 1;
     } else if (gameState.pet.isBadlyBehaving) {
-        // 화난 눈 (날카롭게)
-        sprite[7][3] = 0; sprite[7][4] = 1; sprite[7][10] = 1; sprite[7][11] = 0;
-        sprite[8][3] = 1; sprite[8][4] = 0; sprite[8][10] = 0; sprite[8][11] = 1;
+        // 화난 눈썹 (V자 모양) - 눈 위치: 왼쪽(3,4), 오른쪽(10,11)
+        
+        // 왼쪽 눈썹 (\) - (5,3) -> (6,4)
+        sprite[5][3] = 3; 
+        sprite[6][4] = 3;
+        
+        // 오른쪽 눈썹 (/) - (5,11) -> (6,10)
+        sprite[5][11] = 3;
+        sprite[6][10] = 3;
+        
+        // 눈은 검은색 유지 (흰색 제거)
+        sprite[7][3] = 3; sprite[7][4] = 3;
+        sprite[7][10] = 3; sprite[7][11] = 3;
+        sprite[8][3] = 3; sprite[8][4] = 3;
+        sprite[8][10] = 3; sprite[8][11] = 3;
     } else if (pet.emote === '❤️' || pet.state === 'jump' || pet.state === 'love') {
         sprite[7][3] = 1; sprite[7][4] = 0; sprite[7][10] = 1; sprite[7][11] = 0;
         sprite[8][3] = 0; sprite[8][4] = 1; sprite[8][10] = 0; sprite[8][11] = 1;
@@ -279,7 +337,8 @@ setInterval(() => {
     }
 
     // 똥 생성 (랜덤)
-    if (gameState.pet.state !== 'sleep' && Math.random() < 0.02) { 
+    const isStudying = !document.getElementById('study-modal').classList.contains('hidden');
+    if (gameState.pet.state !== 'sleep' && !isStudying && Math.random() < 0.02) { 
         if (gameState.poops.length < 5) {
             gameState.poops.push({
                 x: Math.random() * (GAME_WIDTH - 40) + 20,
@@ -287,7 +346,6 @@ setInterval(() => {
             });
             showSpeechBubble("응가 했어...");
             gameState.stats.clean -= 10;
-            gameState.stats.bladder = 100; 
         }
     }
 
@@ -296,11 +354,15 @@ setInterval(() => {
         if (gameTick % 2 === 0) gameState.stats.clean -= 2;
     }
     
+    // 문제 풀이 중(모달 열림)이면 스탯 감소 중지
+    if (!document.getElementById('study-modal').classList.contains('hidden')) {
+        return;
+    }
+
     if (gameTick % 5 === 0) {
         if (gameState.stats.hunger > 0) gameState.stats.hunger -= 1;
         // 청결도 감소 로직 수정: 0 이하로 내려가지 않도록 하는 조건이 있으면 제거하거나 수정
         if (gameState.stats.clean > 0) gameState.stats.clean -= 1;
-        if (gameState.stats.bladder > 0) gameState.stats.bladder -= 1;
         
         if (gameState.pet.state === 'sleep') {
             if (gameState.stats.sleep < 100) gameState.stats.sleep += 5; // 수면 회복 속도 증가 (2 -> 5)
@@ -341,12 +403,13 @@ setInterval(() => {
         else if (gameState.stats.mood < 30) showSpeechBubble("너무 심심해요...");
         else if (gameState.stats.clean < 30) showSpeechBubble("몸이 찝찝해요...");
         else if (gameState.stats.sleep < 30) showSpeechBubble("졸음이 와요...");
+        else if (gameState.stats.weight >= 80) showSpeechBubble("너무 살이 찐 거 같아... 걷기가 힘들어...");
     }
     
     if (gameState.stats.clean <= 0) {
         if (!gameState.isSick) {
             gameState.isSick = true;
-            showSpeechBubble("몸이 안 좋아... 약 좀 줘... 🤢");
+            showSpeechBubble("몸이 안 좋아... 의사 선생님께 데려가 줘... 🤢");
         }
     }
     
@@ -365,10 +428,6 @@ setInterval(() => {
         die("배고파서 힘이 없어...");
     } else if (gameState.stats.mood <= 0) {
         die("너무 우울해서 떠날래...");
-    } else if (gameState.stats.bladder <= 0) {
-        gameState.stats.bladder = 50;
-        gameState.stats.clean = 0;
-        showSpeechBubble("앗... 실수했어...");
     }
 
     updateUI();
@@ -437,7 +496,7 @@ function update(dt) {
     const pet = gameState.pet;
     pet.animTimer += dt;
 
-    if (pet.state === 'eating' || pet.state === 'shower' || pet.state === 'dead' || pet.state === 'sleep' || pet.state === 'toilet') {
+    if (pet.state === 'eating' || pet.state === 'shower' || pet.state === 'dead' || pet.state === 'sleep') {
         return;
     }
 
@@ -466,7 +525,12 @@ function update(dt) {
     }
 
     if (pet.state === 'walk') {
-        pet.x += pet.direction * 0.5;
+        // 몸무게에 따른 이동 속도 감소
+        let speed = 0.5;
+        if (gameState.stats.weight >= 80) speed = 0.2;
+        else if (gameState.stats.weight >= 50) speed = 0.35;
+
+        pet.x += pet.direction * speed;
         if (pet.x < 50) { pet.x = 50; pet.direction = 1; }
         if (pet.x > GAME_WIDTH - 50) { pet.x = GAME_WIDTH - 50; pet.direction = -1; }
         
@@ -480,11 +544,12 @@ function update(dt) {
 }
 
 function draw() {
-    const bgItem = SHOP_DB.backgrounds.find(b => b.id === gameState.equipped.background);
-    ctx.fillStyle = bgItem ? bgItem.color : '#f0f0f0';
+    const bgItem = SHOP_DB.bg.find(b => b.id === gameState.equipped.background);
+    ctx.fillStyle = bgItem ? bgItem.color : '#ffffff';
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    ctx.fillStyle = '#d0d0d0';
+    const floorItem = SHOP_DB.floor.find(f => f.id === gameState.equipped.floor);
+    ctx.fillStyle = floorItem ? floorItem.color : '#d0d0d0';
     ctx.fillRect(0, 230, GAME_WIDTH, 90);
 
     if (gameState.pet.state === 'sleep') {
@@ -496,46 +561,76 @@ function draw() {
     }
 
     if (gameState.stage === 'egg') {
-        ctx.fillStyle = '#fff'; 
-        ctx.beginPath();
-        ctx.ellipse(gameState.pet.x, gameState.pet.y, 25, 35, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // 알 흔들림 애니메이션
+        let shakeX = 0;
+        if (gameState.egg.progress > 0) {
+             // 진행도에 따라 흔들림 강도 증가 (최대 5px)
+             const intensity = gameState.egg.progress / 20; 
+             shakeX = Math.sin(Date.now() / 60) * intensity;
+        }
+
+        const eggWidth = 90; 
+        const eggHeight = 105;
+        const eggX = gameState.pet.x - 15; // 왼쪽으로 이동
+        const eggY = gameState.pet.y;
+        
+        ctx.drawImage(eggImage, eggX - eggWidth/2 + shakeX, eggY - eggHeight/2, eggWidth, eggHeight);
         
         ctx.fillStyle = '#333';
         ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(gameState.petName || '알', gameState.pet.x, gameState.pet.y - 50);
+        ctx.fillText(gameState.petName || '알', eggX, eggY - 65);
 
         // 남은 시간 위치 변경 (알 아래쪽)
         ctx.fillStyle = 'red';
         ctx.font = '10px sans-serif';
-        ctx.fillText(`알 부화 제한 시간: ${gameState.egg.timer}초`, gameState.pet.x, gameState.pet.y + 90);
+        ctx.fillText(`알 부화 제한 시간: ${gameState.egg.timer}초`, eggX, eggY + 90);
+        
+        ctx.fillStyle = '#555';
+        ctx.font = '10px sans-serif';
+        ctx.fillText("A 버튼을 눌러 모닥불의 세기를 적절하게 유지시키자!", eggX, eggY + 110);
 
         if (gameState.egg.hasBonfire) {
             const fireSize = 30 + (gameState.egg.temp / 5); 
             ctx.font = `${fireSize}px sans-serif`;
-            ctx.fillText('🔥', gameState.pet.x + 40, gameState.pet.y + 20);
+            ctx.fillText('🔥', eggX + 50, eggY + 20);
             
+            // 부채 그리기
+            ctx.save();
+            const fanX = eggX + 90;
+            const fanY = eggY;
+            ctx.translate(fanX, fanY);
+            
+            if (gameState.egg.fanAnim > 0) {
+                // 부채질 애니메이션: 시간 기반으로 빠르게 왕복 (0 ~ -50도)
+                const angle = -25 + Math.sin(Date.now() / 50) * 25;
+                ctx.rotate(angle * Math.PI / 180); 
+                gameState.egg.fanAnim--;
+            }
+            
+            // 부채 이미지 그리기
+            const fanSize = 60; // 적절한 크기로 설정
+            ctx.drawImage(fanImage, -fanSize/2, -fanSize/2, fanSize, fanSize);
+
+            ctx.restore();
+
             ctx.fillStyle = '#333';
-            ctx.fillRect(gameState.pet.x - 30, gameState.pet.y + 50, 60, 5);
+            ctx.fillRect(eggX - 30, eggY + 60, 60, 5);
             
             let tempColor = 'blue';
             if (gameState.egg.temp > 40 && gameState.egg.temp < 80) tempColor = 'green'; 
             else if (gameState.egg.temp >= 80) tempColor = 'red'; 
             
             ctx.fillStyle = tempColor;
-            ctx.fillRect(gameState.pet.x - 30, gameState.pet.y + 50, Math.min(60, gameState.egg.temp * 0.6), 5);
+            ctx.fillRect(eggX - 30, eggY + 60, Math.min(60, gameState.egg.temp * 0.6), 5);
             
             ctx.font = '10px sans-serif';
             ctx.fillStyle = '#333';
-            ctx.fillText(`부화중... ${Math.floor(gameState.egg.progress)}%`, gameState.pet.x, gameState.pet.y + 70);
+            ctx.fillText(`부화중... ${Math.floor(gameState.egg.progress)}%`, eggX, eggY + 80);
         } else {
             ctx.font = '12px sans-serif';
             ctx.fillStyle = '#666';
-            ctx.fillText('모닥불이 필요해...', gameState.pet.x, gameState.pet.y + 50);
+            ctx.fillText('모닥불이 필요해...', eggX, eggY + 60);
         }
         return;
     }
@@ -728,12 +823,27 @@ function drawPet(x, y, dir) {
     else if (isChild) pixelScale = 5; 
     else if (isTeen) pixelScale = 5.5;
 
+    // 몸무게에 따른 가로 확대 (뚱뚱해짐)
+    let widthScale = 1;
+    // 10(기본)부터 시작해서 100일 때 2배까지 늘어나도록 수정 (최대 2배)
+    if (gameState.stats.weight > 10) {
+        widthScale = 1 + (gameState.stats.weight - 10) * 0.012; 
+        if (widthScale > 2.0) widthScale = 2.0; // 최대 2배
+    }
+
     const sprite = getCurrentSprite();
     
     const colorItem = SHOP_DB.colors.find(c => c.id === gameState.equipped.bodyColor);
     const bodyColor = colorItem ? colorItem.value : '#ffafcc';
 
-    const offsetX = x - (sprite[0].length * pixelScale) / 2;
+    // 중심점 기준으로 확대하기 위해 좌표 조정
+    // 원래 너비: sprite[0].length * pixelScale
+    // 확대된 너비: sprite[0].length * pixelScale * widthScale
+    // 차이의 절반만큼 왼쪽으로 더 이동해야 중심 유지
+    
+    const baseWidth = sprite[0].length * pixelScale;
+    const scaledWidth = baseWidth * widthScale;
+    const offsetX = x - scaledWidth / 2;
     const offsetY = y - (sprite.length * pixelScale) / 2 + (isBaby ? 20 : (isChild ? 10 : (isTeen ? 5 : 0))); 
 
     for (let r = 0; r < sprite.length; r++) {
@@ -757,10 +867,14 @@ function drawPet(x, y, dir) {
             }
 
             ctx.fillStyle = color;
+            // 가로 길이(width)에 widthScale 적용
+            // 위치(x)는 픽셀 단위로 계산하므로 colIndex * pixelScale * widthScale
+            
             ctx.fillRect(
-                offsetX + colIndex * pixelScale, 
+                offsetX + colIndex * pixelScale * widthScale, 
                 offsetY + r * pixelScale, 
-                pixelScale, pixelScale
+                pixelScale * widthScale, // 픽셀 하나도 가로로 길어짐
+                pixelScale
             );
         }
     }
@@ -783,16 +897,7 @@ function drawPet(x, y, dir) {
         }
         ctx.font = '30px sans-serif';
         ctx.fillText('😋', x, y - 40);
-    } else if (gameState.pet.state === 'toilet') {
-        drawToilet(x, y);
     }
-}
-
-function drawToilet(x, y) {
-    const tissueX = x - 60; 
-    const tissueY = y + 50; 
-    ctx.font = '30px sans-serif';
-    ctx.fillText('🧻', tissueX, tissueY);
 }
 
 function drawAccessory(x, y, dir) {
@@ -834,18 +939,20 @@ function updateUI() {
     const expPercent = Math.floor((gameState.exp / gameState.maxExp) * 100);
     document.getElementById('level-display').innerText = `LV.${gameState.level} (${expPercent}%)`;
     
-    // 알 상태이거나 미니게임 중일 때는 상태 게이지 숨김
+    // 알 상태이거나 미니게임 중일 때는 상태 게이지 및 교감 버튼 숨김
     if (gameState.stage === 'egg' || gameState.minigame.active) {
         document.querySelector('.status-bars').style.display = 'none';
+        document.querySelector('.interact-overlay').style.display = 'none';
     } else {
         document.querySelector('.status-bars').style.display = 'flex';
+        document.querySelector('.interact-overlay').style.display = 'block';
     }
     
     document.getElementById('bar-hunger').style.width = `${gameState.stats.hunger}%`;
     document.getElementById('bar-clean').style.width = `${gameState.stats.clean}%`;
     document.getElementById('bar-sleep').style.width = `${gameState.stats.sleep}%`;
     document.getElementById('bar-mood').style.width = `${gameState.stats.mood}%`;
-    document.getElementById('bar-bladder').style.width = `${gameState.stats.bladder}%`;
+    document.getElementById('bar-weight').style.width = `${Math.min(100, gameState.stats.weight)}%`;
 }
 
 let speechBubbleTimeout = null;
@@ -906,26 +1013,6 @@ function wakeUp() {
     showSpeechBubble("좋은 아침! 개운해!");
 }
 
-function goToToilet() {
-    if (gameState.isDead) return;
-    if (gameState.stage === 'egg') {
-        showSpeechBubble("지금은 할 수 없어...");
-        return;
-    }
-    if (gameState.pet.state === 'sleep') {
-        showSpeechBubble("졸려서 못 가겠어...");
-        return;
-    }
-    
-    gameState.pet.state = 'toilet';
-    gameState.stats.bladder = 100;
-    showSpeechBubble("시원해!");
-    
-    setTimeout(() => {
-        gameState.pet.state = 'idle';
-    }, 3000);
-}
-
 function openMenu(menuType) {
     if (gameState.isDead) return;
     
@@ -960,7 +1047,7 @@ function closeAllModals() {
 }
 
 function loadQuiz() {
-    const q = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+    const q = generateQuiz();
     document.getElementById('quiz-question').innerText = q.q;
     const optsDiv = document.getElementById('quiz-options');
     optsDiv.innerHTML = '';
@@ -1039,6 +1126,14 @@ function answerQuiz(isCorrect) {
 function petAction(type) {
     if (gameState.isDead) return;
     if (type === 'happy') {
+        // 몸무게가 80 이상이면 점프 못함
+        if (gameState.stats.weight >= 80) {
+            gameState.pet.emote = '❤️';
+            showSpeechBubble("몸이 무거워서 못 뛰겠어...");
+            setTimeout(() => { gameState.pet.emote = null; }, 2000);
+            return;
+        }
+
         gameState.pet.state = 'jump';
         gameState.pet.emote = '❤️';
         let count = 0;
@@ -1082,7 +1177,7 @@ function renderShop(tab) {
         el.className = `shop-item ${isLocked ? 'locked' : ''}`;
         
         let previewHtml = '';
-        if (item.type === 'color' || item.type === 'bg') {
+        if (item.type === 'color' || item.type === 'bg' || item.type === 'floor') {
             const colorVal = item.value || item.color;
             previewHtml = `<div class="color-preview" style="background:${colorVal}"></div>`;
         } else {
@@ -1110,23 +1205,55 @@ function renderShop(tab) {
 }
 
 function buyItem(item) {
-    if (gameState.gold >= item.price) {
-        if (confirm(`${item.name}을(를) ${item.price}P에 구매하시겠습니까?`)) {
-            gameState.gold -= item.price;
-            
-            if (item.id === 'item_bonfire') {
-                gameState.egg.hasBonfire = true;
-                showSpeechBubble("모닥불 설치 완료! A버튼으로 부채질하자!");
-            } else {
-                gameState.inventory.push(item.id);
+    // 소모품인지 확인
+    const isConsumable = ['food', 'clean', 'sleep', 'mood', 'diet', 'medicine'].includes(item.type);
+
+    if (isConsumable) {
+        // 수량 입력 받기
+        let countStr = prompt(`${item.name}을(를) 몇 개 구매하시겠습니까? (개당 ${item.price}P)`, "1");
+        if (countStr === null) return; // 취소
+
+        let count = parseInt(countStr);
+        if (isNaN(count) || count <= 0) {
+            alert("올바른 수량을 입력해주세요.");
+            return;
+        }
+
+        const totalPrice = item.price * count;
+
+        if (gameState.gold >= totalPrice) {
+            if (confirm(`${item.name} ${count}개를 ${totalPrice}P에 구매하시겠습니까?`)) {
+                gameState.gold -= totalPrice;
+                for (let i = 0; i < count; i++) {
+                    gameState.inventory.push(item.id);
+                }
+                updateUI();
+                renderShop(currentShopTab);
+                showSpeechBubble(`${count}개 구매 완료!`);
             }
-            
-            updateUI();
-            renderShop(currentShopTab);
-            if (item.id !== 'item_bonfire') showSpeechBubble("구매 완료!");
+        } else {
+            showSpeechBubble("돈이 부족해...");
         }
     } else {
-        showSpeechBubble("돈이 부족해...");
+        // 영구 아이템 (기존 로직)
+        if (gameState.gold >= item.price) {
+            if (confirm(`${item.name}을(를) ${item.price}P에 구매하시겠습니까?`)) {
+                gameState.gold -= item.price;
+                
+                if (item.id === 'item_bonfire') {
+                    gameState.egg.hasBonfire = true;
+                    showSpeechBubble("모닥불 설치 완료! A버튼을 눌러 적절한 온도를 유지해주세요!");
+                } else {
+                    gameState.inventory.push(item.id);
+                }
+                
+                updateUI();
+                renderShop(currentShopTab);
+                if (item.id !== 'item_bonfire') showSpeechBubble("구매 완료!");
+            }
+        } else {
+            showSpeechBubble("돈이 부족해...");
+        }
     }
 }
 
@@ -1169,9 +1296,11 @@ function renderInventory(tab) {
         if (tab === 'colors' && gameState.equipped.bodyColor === item.id) isEquipped = true;
         if (tab === 'items' && gameState.equipped.accessory === item.id) isEquipped = true;
         if (tab === 'bg' && gameState.equipped.background === item.id) isEquipped = true;
+        if (tab === 'floor' && gameState.equipped.floor === item.id) isEquipped = true;
+        if (tab === 'floor' && gameState.equipped.floor === item.id) isEquipped = true;
 
         let previewHtml = '';
-        if (item.type === 'color' || item.type === 'bg') {
+        if (item.type === 'color' || item.type === 'bg' || item.type === 'floor') {
             const colorVal = item.value || item.color;
             previewHtml = `<div class="color-preview" style="background:${colorVal}"></div>`;
         } else {
@@ -1179,7 +1308,7 @@ function renderInventory(tab) {
         }
 
         let actionText = '사용하기';
-        if (item.type === 'color' || item.type === 'item' || item.type === 'bg') {
+        if (item.type === 'color' || item.type === 'item' || item.type === 'bg' || item.type === 'floor') {
             actionText = isEquipped ? '장착 중' : '장착하기';
         }
 
@@ -1233,11 +1362,15 @@ function useConsumable(item) {
         showSpeechBubble("기분이 좋아졌어!");
     } else if (item.type === 'diet') {
         gameState.stats.weight = Math.max(1, gameState.stats.weight + item.value);
+        // 샐러드 섭취 시 포만감 증가 (예: 10)
+        gameState.stats.hunger = Math.min(100, gameState.stats.hunger + 10);
         showSpeechBubble("몸이 가벼워졌어!");
     } else if (item.type === 'medicine') {
         if (gameState.isSick) {
             gameState.isSick = false;
             gameState.sicknessTimer = 0;
+            // 병이 나을 때 청결도도 약간 회복시켜서 즉시 재발 방지
+            gameState.stats.clean = Math.max(20, gameState.stats.clean); 
             showSpeechBubble("이제 안 아파! 고마워!");
         } else {
             showSpeechBubble("난 건강해! 안 먹을래.");
@@ -1262,10 +1395,17 @@ function useConsumable(item) {
 function equipItem(item) {
     if (item.type === 'color') gameState.equipped.bodyColor = item.id;
     if (item.type === 'item') gameState.equipped.accessory = item.id;
-    if (item.type === 'bg') gameState.equipped.background = item.id;
+    if (item.type === 'bg') {
+        gameState.equipped.background = item.id;
+        showSpeechBubble("우와! 벽지가 너무 예쁘다!");
+    } else if (item.type === 'floor') {
+        gameState.equipped.floor = item.id;
+        showSpeechBubble("바닥이 마음에 들어!");
+    } else {
+        showSpeechBubble("장착 완료!");
+    }
     
     renderInventory(currentInvTab);
-    showSpeechBubble("장착 완료!");
 }
 
 function activateCheat() {
@@ -1275,11 +1415,12 @@ function activateCheat() {
         
         const allColors = SHOP_DB.colors.map(i => i.id);
         const allItems = SHOP_DB.items.map(i => i.id);
-        const allBgs = SHOP_DB.backgrounds.map(i => i.id);
+        const allBgs = SHOP_DB.bg.map(i => i.id);
+        const allFloors = SHOP_DB.floor.map(i => i.id);
         
         const foods = ['f_bread', 'f_bread', 'f_soap', 'f_soap', 'f_candy', 'f_diet', 'f_medicine'];
         
-        gameState.inventory = [...new Set([...allColors, ...allItems, ...allBgs]), ...foods];
+        gameState.inventory = [...new Set([...allColors, ...allItems, ...allBgs, ...allFloors]), ...foods];
         
         updateUI();
         showSpeechBubble("치트키 발동!!");
@@ -1323,20 +1464,8 @@ function fanFire() {
         showSpeechBubble("따뜻해서 너무 좋아 😊");
     }
     
-    const fireEffect = document.createElement('div');
-    fireEffect.innerText = "🔥";
-    fireEffect.style.position = "absolute";
-    fireEffect.style.left = "50%";
-    fireEffect.style.top = "50%";
-    fireEffect.style.fontSize = "20px";
-    fireEffect.style.transition = "top 1s, opacity 1s";
-    document.body.appendChild(fireEffect);
-    
-    setTimeout(() => {
-        fireEffect.style.top = "40%";
-        fireEffect.style.opacity = "0";
-    }, 10);
-    setTimeout(() => fireEffect.remove(), 1000);
+    // 부채 애니메이션 트리거
+    gameState.egg.fanAnim = 10;
 }
 
 function hatchEgg() {
@@ -1385,6 +1514,17 @@ function interact(action) {
     }
 }
 
+function closeTutorial() {
+    document.getElementById('tutorial-modal').classList.add('hidden');
+    if (!gameState.petName) {
+        document.getElementById('start-modal').classList.remove('hidden');
+    }
+}
+
+function openTutorial() {
+    document.getElementById('tutorial-modal').classList.remove('hidden');
+}
+
 // 전역 스코프에 함수 노출
 window.startGameWithInput = function() {
     const nameInput = document.getElementById('pet-name-input').value;
@@ -1409,12 +1549,13 @@ window.switchInvTab = switchInvTab;
 window.buyItem = buyItem;
 window.useOrEquipItem = useOrEquipItem;
 window.activateCheat = activateCheat;
-window.goToToilet = goToToilet;
 window.toggleSleep = toggleSleep;
 window.startMinigame = startMinigame;
 window.answerQuiz = answerQuiz;
 window.movePet = movePet;
 window.interact = interact;
+window.closeTutorial = closeTutorial;
+window.openTutorial = openTutorial;
 
 function startMinigame(type) {
     if (gameState.isDead || gameState.pet.state === 'sleep' || gameState.stage === 'egg') {
@@ -1505,6 +1646,9 @@ function updateRopeGame() {
         
         if (gameState.stats.mood < 100) gameState.stats.mood += 2;
         
+        // 미니게임 진행 시 몸무게 감소 (점수 획득 시마다)
+        if (gameState.stats.weight > 10) gameState.stats.weight = Math.max(10, gameState.stats.weight - 0.5);
+
         if (gameState.minigame.score % 5 === 0) gameState.minigame.ropeSpeed += 0.01; 
     }
 
@@ -1534,9 +1678,11 @@ function updateDodgeGame() {
         const obs = dodge.obstacles[i];
         obs.y += obs.speed;
         
-        // 충돌 범위 확대 (몸 전체 판정: 머리 위부터 발끝까지, 좌우 폭도 넉넉하게)
-        if (obs.x > gameState.pet.x - 25 && obs.x < gameState.pet.x + 25 &&
-            obs.y > gameState.pet.y - 60 && obs.y < gameState.pet.y) {
+        // 충돌 범위 축소 (더 관대하게 판정)
+        // 기존: x +/- 25, y -60 ~ 0
+        // 수정: x +/- 15, y -50 ~ -5 (발 쪽은 판정 제외, 머리 살짝 위 제외)
+        if (obs.x > gameState.pet.x - 15 && obs.x < gameState.pet.x + 15 &&
+            obs.y > gameState.pet.y - 50 && obs.y < gameState.pet.y - 5) {
             
             // 청결도 감소
             gameState.stats.clean = Math.max(0, gameState.stats.clean - 30);
@@ -1550,6 +1696,9 @@ function updateDodgeGame() {
             dodge.obstacles.splice(i, 1);
             gameState.minigame.score++;
              if (gameState.stats.mood < 100) gameState.stats.mood += 1;
+             
+             // 미니게임 진행 시 몸무게 감소 (장애물 통과 시마다)
+             if (gameState.stats.weight > 10) gameState.stats.weight = Math.max(10, gameState.stats.weight - 0.2);
         }
     }
 }
@@ -1600,9 +1749,9 @@ function drawDodgeGame() {
 
 function drawCribBack(x, y) {
     const w = 80;
-    const h = 50;
+    const h = 25; 
     const bx = x - w/2;
-    const by = y - h/2 + 20;
+    const by = y - h/2 + 35; // 위치를 아래로 이동 (+20 -> +35)
 
     ctx.fillStyle = '#E0F7FA'; 
     
@@ -1621,9 +1770,9 @@ function drawCribBack(x, y) {
 
 function drawCribBlanket(x, y) {
     const w = 80;
-    const h = 50;
+    const h = 25; 
     const bx = x - w/2;
-    const by = y - h/2 + 20;
+    const by = y - h/2 + 35; // 위치를 아래로 이동 (+20 -> +35)
 
     ctx.strokeStyle = '#B2EBF2'; 
     ctx.lineWidth = 4;

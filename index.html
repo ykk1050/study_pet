@@ -48,8 +48,8 @@
                             <div class="bar-bg"><div id="bar-mood" class="bar-fill" style="width: 100%; background: #ffb3ba;"></div></div>
                         </div>
                         <div class="status-row">
-                            <span class="icon">🚽</span>
-                            <div class="bar-bg"><div id="bar-bladder" class="bar-fill" style="width: 100%; background: #ffd700;"></div></div>
+                            <span class="icon">⚖️</span>
+                            <div class="bar-bg"><div id="bar-weight" class="bar-fill" style="width: 10%; background: #a0a0a0;"></div></div>
                         </div>
                     </div>
                 </div>
@@ -81,6 +81,7 @@
         
         <!-- 하단 메뉴 버튼들 -->
         <div class="extra-controls">
+            <button class="menu-btn" onclick="openTutorial()">📖<br>가이드</button>
             <button class="menu-btn" onclick="openMenu('shop')">🏪<br>상점</button>
             <button class="menu-btn" onclick="toggleSleep()">🛏️<br>침실</button>
             <button class="menu-btn" onclick="openMenu('minigame')">🎮<br>미니게임</button>
@@ -91,8 +92,35 @@
     <!-- 말풍선 (스크린 밖으로 이동) -->
     <div id="pet-bubble" class="pixel-bubble hidden">안녕!</div>
 
+    <!-- 모달: 튜토리얼 -->
+    <div id="tutorial-modal" class="modal">
+        <div class="modal-content pixel-box wide-modal">
+            <h3>게임 가이드</h3>
+            <div class="tutorial-content" style="text-align: left; font-size: 10px; line-height: 1.6; max-height: 250px; overflow-y: auto;">
+                <p><strong>[조작 방법]</strong></p>
+                <p>🕹️ <strong>방향키:</strong> 펫 이동 / 메뉴 선택</p>
+                <p>🔴 <strong>A 버튼:</strong> 공부하기 / 알 부화 (부채질)</p>
+                <p>🔴 <strong>B 버튼:</strong> 가방 열기</p>
+                <br>
+                <p><strong>[게임 팁]</strong></p>
+                <p>🥚 <strong>알 부화:</strong> 상점에서 '모닥불'을 구매 후 A버튼을 눌러 온도를 조절하세요.</p>
+                <p>🤒 <strong>질병:</strong> 청결도가 낮으면 병에 걸려요. 약을 먹여주세요.</p>
+                <p>💀 <strong>죽음:</strong> 배고픔, 기분, 수명 등이 다하면 펫이 떠나요.</p>
+                <p>💩 <strong>청소:</strong> 똥을 클릭해서 치워주세요 (5골드 소모).</p>
+                <br>
+                <p><strong>[상태 설명]</strong></p>
+                <p>🍖 <strong>배고픔:</strong> 0이 되면 펫이 떠나요! 음식을 주세요.</p>
+                <p>✨ <strong>청결도:</strong> 낮으면 병에 걸려요. 씻겨주거나 똥을 치워주세요.</p>
+                <p>💤 <strong>수면:</strong> 낮으면 졸려해요. 침실에서 재워주세요.</p>
+                <p>❤️ <strong>기분:</strong> 0이 되면 펫이 떠나요! 놀아주거나 간식을 주세요.</p>
+                <p>⚖️ <strong>몸무게:</strong> 높으면 이동 속도가 느려지고 점프를 못해요. 운동(미니게임)이나 샐러드로 관리해주세요.</p>
+            </div>
+            <button class="pixel-btn" onclick="closeTutorial()">알겠어요!</button>
+        </div>
+    </div>
+
     <!-- 모달: 이름 짓기 (게임 시작) -->
-    <div id="start-modal" class="modal">
+    <div id="start-modal" class="modal hidden">
         <div class="modal-content pixel-box">
             <h3>펫의 이름은?</h3>
             <input type="text" id="pet-name-input" placeholder="이름을 입력하세요" style="font-family: 'Press Start 2P', sans-serif; margin: 10px 0; padding: 5px; text-align: center; width: 80%;">
@@ -122,6 +150,7 @@
                 <button onclick="switchShopTab('colors')">색상</button>
                 <button onclick="switchShopTab('items')">장식</button>
                 <button onclick="switchShopTab('bg')">배경</button>
+                <button onclick="switchShopTab('floor')">바닥</button>
             </div>
             <div id="shop-list" class="scroll-list">
                 <!-- 아이템 리스트 -->
@@ -139,6 +168,7 @@
                 <button onclick="switchInvTab('colors')">색상</button>
                 <button onclick="switchInvTab('items')">장식</button>
                 <button onclick="switchInvTab('bg')">배경</button>
+                <button onclick="switchInvTab('floor')">바닥</button>
             </div>
             <div id="inv-list" class="scroll-list">
                 <!-- 아이템 리스트 -->
@@ -164,7 +194,8 @@
         <h2 style="color: red; font-family: 'Press Start 2P'; margin-bottom: 20px;">GAME OVER</h2>
         <button class="pixel-btn" onclick="window.location.reload()">다시 시작</button>
     </div>
-
+    <script src="vocabulary.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
