@@ -1062,7 +1062,7 @@ function loadQuiz() {
 
 function answerQuiz(isCorrect) {
     if (isCorrect) {
-        const reward = 100 + (gameState.level * 20);
+        const reward = 50 + (gameState.level * 20);
         const expGain = 20;
         
         gameState.gold += reward;
