@@ -12,6 +12,11 @@ body {
     overflow: hidden; /* Prevent scrolling */
 }
 
+.emoji-font {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+    font-style: normal;
+}
+
 /* Game Boy Body */
 .game-boy {
     background-color: #c0c0c0;
@@ -265,6 +270,7 @@ canvas {
     margin-right: 4px;
     width: 15px;
     text-align: center;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
 }
 
 .bar-bg {
@@ -399,6 +405,7 @@ canvas {
 
 .icon-preview {
     font-size: 20px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
 }
 
 .color-preview {

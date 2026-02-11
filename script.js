@@ -444,6 +444,9 @@ function die(reason) {
     
     showSpeechBubble(reason);
 
+    // 죽음 기록 저장 및 현재 세이브 삭제
+    addToGraveyard(reason);
+
     // 말풍선이 사라지지 않도록 hidden 제거 타이머 취소 로직은 없지만, 
     // showSpeechBubble 내부의 setTimeout이 3초 뒤에 hidden을 추가하므로
     // 죽었을 때는 계속 떠있게 하려면 별도 처리가 필요할 수 있음.
@@ -1039,6 +1042,9 @@ function openMenu(menuType) {
         document.getElementById('inventory-modal').classList.remove('hidden');
     } else if (menuType === 'minigame') {
         document.getElementById('minigame-modal').classList.remove('hidden');
+    } else if (menuType === 'graveyard') {
+        renderGraveyard();
+        document.getElementById('graveyard-modal').classList.remove('hidden');
     }
 }
 
@@ -1062,7 +1068,7 @@ function loadQuiz() {
 
 function answerQuiz(isCorrect) {
     if (isCorrect) {
-        const reward = 30 + (gameState.level * 20);
+        const reward = 100 + (gameState.level * 20);
         const expGain = 20;
         
         gameState.gold += reward;
@@ -1813,5 +1819,116 @@ canvas.addEventListener('mousedown', (e) => {
     }
 });
 
+// --- 저장 및 불러오기 시스템 ---
+const SAVE_KEY = 'studyPet_save';
+const GRAVEYARD_KEY = 'studyPet_graveyard';
+
+function saveGame() {
+    if (gameState.isDead) return; // 죽은 상태는 저장하지 않음 (이미 graveyard에 저장됨)
+    localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+    // console.log("Game Saved");
+}
+
+function loadGame() {
+    const savedData = localStorage.getItem(SAVE_KEY);
+    if (savedData) {
+        try {
+            const parsed = JSON.parse(savedData);
+            // 기존 gameState에 덮어쓰기 (새로운 필드가 있을 수 있으므로 병합)
+            gameState = { ...gameState, ...parsed };
+            
+            // 객체 내부의 객체들도 병합 (깊은 복사가 아니므로 주의)
+            gameState.egg = { ...gameState.egg, ...parsed.egg };
+            gameState.stats = { ...gameState.stats, ...parsed.stats };
+            gameState.equipped = { ...gameState.equipped, ...parsed.equipped };
+            gameState.pet = { ...gameState.pet, ...parsed.pet };
+            gameState.minigame = { ...gameState.minigame, ...parsed.minigame };
+            
+            // 미니게임 상태 초기화 (저장된 상태로 시작하면 꼬일 수 있음)
+            gameState.minigame.active = false;
+            gameState.pet.state = 'idle';
+            
+            console.log("Game Loaded");
+            
+            // 로드 후 이름이 없으면 시작 모달 띄우기 (오류 방지)
+            if (!gameState.petName) {
+                document.getElementById('start-modal').classList.remove('hidden');
+            } else {
+                document.getElementById('start-modal').classList.add('hidden');
+            }
+        } catch (e) {
+            console.error("Save file corrupted", e);
+        }
+    } else {
+        // 저장된 데이터가 없으면 시작 모달 표시
+        document.getElementById('start-modal').classList.remove('hidden');
+    }
+}
+
+function addToGraveyard(reason) {
+    const pastPets = JSON.parse(localStorage.getItem(GRAVEYARD_KEY) || '[]');
+    const deadPet = {
+        name: gameState.petName,
+        age: gameState.age,
+        level: gameState.level,
+        reason: reason,
+        date: new Date().toLocaleDateString()
+    };
+    pastPets.push(deadPet);
+    localStorage.setItem(GRAVEYARD_KEY, JSON.stringify(pastPets));
+    
+    // 현재 세이브 삭제
+    localStorage.removeItem(SAVE_KEY);
+}
+
+function renderGraveyard() {
+    const container = document.getElementById('graveyard-list');
+    container.innerHTML = '';
+    
+    const pastPets = JSON.parse(localStorage.getItem(GRAVEYARD_KEY) || '[]');
+    
+    if (pastPets.length === 0) {
+        container.innerHTML = '<div style="padding:20px; color:#666;">아직 떠나보낸 펫이 없습니다.</div>';
+        return;
+    }
+    
+    // 최신순 정렬
+    pastPets.reverse().forEach(pet => {
+        const el = document.createElement('div');
+        el.className = 'shop-item'; // 스타일 재사용
+        el.style.cursor = 'default';
+        
+        el.innerHTML = `
+            <div class="icon-preview"><span class="emoji-font">💮</span></div>
+            <div class="item-info">
+                <div class="name">${pet.name} (LV.${pet.level})</div>
+                <div class="price" style="color: #666; font-size: 8px;">
+                    ${pet.age}살에 떠남<br>
+                    사유: ${pet.reason}<br>
+                    ${pet.date}
+                </div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+// 자동 저장 (30초마다)
+setInterval(saveGame, 30000);
+
+// 창 닫기 전 저장
+window.addEventListener('beforeunload', () => {
+    saveGame();
+});
+
+// 초기화 실행
+loadGame();
 updateUI();
 gameLoop(0);
+
+// 전역 함수 추가
+window.renderGraveyard = renderGraveyard;
+window.resetGame = function() {
+    localStorage.removeItem(SAVE_KEY);
+    window.location.reload();
+};

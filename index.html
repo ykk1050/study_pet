@@ -81,11 +81,12 @@
         
         <!-- 하단 메뉴 버튼들 -->
         <div class="extra-controls">
-            <button class="menu-btn" onclick="openTutorial()">📖<br>가이드</button>
-            <button class="menu-btn" onclick="openMenu('shop')">🏪<br>상점</button>
-            <button class="menu-btn" onclick="toggleSleep()">🛏️<br>침실</button>
-            <button class="menu-btn" onclick="openMenu('minigame')">🎮<br>미니게임</button>
-            <button class="menu-btn cheat-btn" onclick="activateCheat()">🔓<br>치트</button>
+            <button class="menu-btn" onclick="openTutorial()"><span class="emoji-font">📖</span><br>가이드</button>
+            <button class="menu-btn" onclick="openMenu('shop')"><span class="emoji-font">🏪</span><br>상점</button>
+            <button class="menu-btn" onclick="toggleSleep()"><span class="emoji-font">🛏️</span><br>침실</button>
+            <button class="menu-btn" onclick="openMenu('minigame')"><span class="emoji-font">🎮</span><br>미니게임</button>
+            <button class="menu-btn" onclick="openMenu('graveyard')"><span class="emoji-font">💮</span><br>추억</button>
+            <button class="menu-btn cheat-btn" onclick="activateCheat()"><span class="emoji-font">🔓</span><br>치트</button>
         </div>
     </div>
 
@@ -189,10 +190,21 @@
         </div>
     </div>
 
+    <!-- 모달: 추억의 전당 (죽은 펫 목록) -->
+    <div id="graveyard-modal" class="modal hidden">
+        <div class="modal-content pixel-box wide-modal">
+            <h3>추억의 전당</h3>
+            <div id="graveyard-list" class="scroll-list" style="max-height: 250px; overflow-y: auto;">
+                <!-- 죽은 펫 리스트 -->
+            </div>
+            <button class="pixel-btn close-btn" onclick="closeAllModals()">닫기</button>
+        </div>
+    </div>
+
     <!-- 게임 오버 / 다시 시작 -->
     <div id="gameover-overlay" class="hidden">
         <h2 style="color: red; font-family: 'Press Start 2P'; margin-bottom: 20px;">GAME OVER</h2>
-        <button class="pixel-btn" onclick="window.location.reload()">다시 시작</button>
+        <button class="pixel-btn" onclick="resetGame()">다시 시작</button>
     </div>
     <script src="vocabulary.js"></script>
     <script src="script.js"></script>
